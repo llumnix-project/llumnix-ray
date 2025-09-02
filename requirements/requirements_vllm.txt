@@ -10,3 +10,4 @@ pyyaml
 yacs
 pyzmq
 setuptools_scm == 7.1.0
+uvloop

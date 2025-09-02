@@ -9,3 +9,4 @@ pyyaml
 yacs
 pyzmq
 setuptools <= 70.0.0
+uvloop

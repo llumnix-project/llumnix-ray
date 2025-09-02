@@ -27,9 +27,11 @@ from llumnix.server_info import ServerInfo
 from llumnix.ray_utils import LlumnixActor, log_actor_ray_info, get_llumnix_actor_handle
 from llumnix.request_output import LlumnixRequestOuput, LlumnixRequestOutputs
 from llumnix.queue.utils import init_request_output_queue_client
-from llumnix.utils import ray_get_with_timeout, exception_wrapper_async
 from llumnix.constants import NUM_GPUS_BLADELLM_GPU_ACTOR
 from llumnix.utils import (
+    ray_get_with_timeout,
+    exception_wrapper_async,
+    start_asyncio_thread,
     asyncio_wait_for_ray_remote_call_with_timeout,
     RequestIDType,
     BackendType,
@@ -157,11 +159,8 @@ class ThreadOutputForwarder(BaseOutputForwarder):
         else:
             self.main_loop = asyncio.get_event_loop()
         self.abort_request_callback = abort_request_callback
-        self.server_request_outputs_queue = queue.Queue()
-        self.put_queue_loop_thread = threading.Thread(
-            target=self._start_put_queue_loop, args=(), daemon=True, name="thread_output_forwarder"
-        )
-        self.put_queue_loop_thread.start()
+        self.forwarder_loop = start_asyncio_thread("thread_output_forwarder")
+
 
     def put_nowait_to_servers(
         self,
@@ -170,29 +169,13 @@ class ThreadOutputForwarder(BaseOutputForwarder):
     ) -> None:
         for req_outputs in server_request_outputs.values():
             self.add_trace_timeline(req_outputs, trace_name="engine_thread_put_queue_timestamp")
-        if self.put_queue_loop_thread.is_alive():
-            self.server_request_outputs_queue.put_nowait((server_request_outputs, server_info_dict))
-        # Ensure engine will die if put queue loop thread is dead.
-        else:
-            raise RuntimeError("Engine ThreadOutputForwarder is dead.")
-
-    def _start_put_queue_loop(self):
-        async def put_queue_loop():
-            while True:
-                item = self.server_request_outputs_queue.get()
-                if isinstance(item, StopPutQueueSignal):
-                    break
-                server_request_outputs, server_info_dict = item
-                await self._put_nowait_to_servers(
-                    server_request_outputs, server_info_dict,
-                )
-
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            loop.run_until_complete(put_queue_loop())
-        finally:
-            loop.close()
+        asyncio.run_coroutine_threadsafe(
+            self._put_nowait_to_servers(
+                server_request_outputs,
+                server_info_dict,
+            ),
+            self.forwarder_loop,
+        )
 
     async def _put_nowait_to_servers(
         self,
@@ -214,8 +197,8 @@ class ThreadOutputForwarder(BaseOutputForwarder):
             )
 
     def stop(self) -> None:
-        self.server_request_outputs_queue.put(StopPutQueueSignal())
-        self.put_queue_loop_thread.join()
+        self.forwarder_loop.stop()
+        self.forwarder_loop.close()
         if self.request_output_queue_type == QueueType.ZMQ:
             self.request_output_queue_client.close()
 
