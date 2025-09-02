@@ -13,8 +13,6 @@
 
 from typing import Dict, List, Coroutine, Union
 import asyncio
-import queue
-import threading
 from abc import ABC, abstractmethod
 from enum import Enum
 
@@ -198,7 +196,6 @@ class ThreadOutputForwarder(BaseOutputForwarder):
 
     def stop(self) -> None:
         self.forwarder_loop.stop()
-        self.forwarder_loop.close()
         if self.request_output_queue_type == QueueType.ZMQ:
             self.request_output_queue_client.close()
 
