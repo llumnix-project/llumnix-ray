@@ -11,6 +11,14 @@ Efficient and easy <i>multi-instance</i> LLM serving
 
 ---
 
+## About the Llumnix V1 Upgrage (Mar. 2026)
+
+We have refactored and upgraded Llumnix to Llumnix v1, a new architecture designed to be more modular and cloud-native, and better suited for production environments. We will keep iterating Llumnix v1 in the future. See the [new repository](https://github.com/llumnix-project/llumnix) for details!
+
+This repository, i.e., the Ray-based architecture (Llumnix v0), is a better choice for local deployments and quick prototyping and experimentation of scheduling ideas.
+
+---
+
 ## 🔥 Latest News
 
 - [2025.5] We created a developer [slack](https://llumnix.slack.com) for discussion and collaboration.
