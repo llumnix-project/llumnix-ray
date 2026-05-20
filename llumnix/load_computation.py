@@ -98,7 +98,15 @@ class RemainingStepsLoad(BaseLoad):
     def __lt__(self, other: "RemainingStepsLoad") -> bool:
         if isinstance(other, DummyLoad):
             return False
-        return self.remaining_steps >= other.remaining_steps
+        return self.remaining_steps > other.remaining_steps
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, RemainingStepsLoad):
+            return NotImplemented
+        return self.remaining_steps == other.remaining_steps
+
+    def __hash__(self) -> int:
+        return hash(self.remaining_steps)
 
     def __repr__(self) -> str:
         return f"RemainingStepsLoad(remaining_steps={self.remaining_steps},is_busy={self.is_busy()})"
