@@ -901,32 +901,20 @@ def main():
         return
 
     file_name = os.path.splitext(args.log_filename)[0] + "_latency_info.json"
-    results = []
-    import datetime
-    current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-    file_name = os.path.splitext(args.log_filename)[0] + "_latency_info.json"
-    try:
-        with open(file_name, 'r') as f:
-            results = json.load(f)
-    except json.decoder.JSONDecodeError:
-        pass
-    except FileNotFoundError:
-        os.mknod(file_name)
     with open(file_name, 'w') as f:
-        results.append({"qps": args.qps,
-                        "cv": args.coefficient_variation,
-                        "request_ids": request_ids,
-                        "request_lens": request_lens,
-                        "request_latencies": request_latencies,
-                        "prefill_token_latencies": prefill_token_latencies,
-                        "decode_token_latencies": decode_token_latencies,
-                        "decode_sum_latencies": decode_sum_latencies,
-                        "all_decode_token_latencies": all_decode_token_latencies,
-                        "inference_latencies": inference_latencies,
-                        "per_token_latency_breakdown_list": per_token_latency_breakdown_list,
-                        "throughput": throughput, 
-                        "instance_num": avg_instance_num})
-        json.dump(results, f)
+        json.dump([{"qps": args.qps,
+                    "cv": args.coefficient_variation,
+                    "request_ids": request_ids,
+                    "request_lens": request_lens,
+                    "request_latencies": request_latencies,
+                    "prefill_token_latencies": prefill_token_latencies,
+                    "decode_token_latencies": decode_token_latencies,
+                    "decode_sum_latencies": decode_sum_latencies,
+                    "all_decode_token_latencies": all_decode_token_latencies,
+                    "inference_latencies": inference_latencies,
+                    "per_token_latency_breakdown_list": per_token_latency_breakdown_list,
+                    "throughput": throughput,
+                    "instance_num": avg_instance_num}], f)
 
 
 if __name__ == '__main__':
